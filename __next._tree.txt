@@ -1,0 +1,2 @@
+:HL["/pipboy-ultimate/_next/static/chunks/3cb2e63706951cd6.css","style"]
+0:{"buildId":"TG7kF6GxQwV0yzun2SX9F","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":true},"staleTime":300}

@@ -452,9 +452,9 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
 }
 
 .galaga-canvas {
@@ -467,7 +467,9 @@ html, body {
   display: flex;
   gap: 8px;
   width: 100%;
+  max-width: 360px;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .galaga-touch-btn {
@@ -476,12 +478,14 @@ html, body {
   color: var(--pip-text);
   font-family: 'Courier New', monospace;
   font-size: 18px;
-  padding: 12px 20px;
+  padding: 10px 16px;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
   text-shadow: 0 0 4px var(--pip-green-glow);
+  flex: 1;
+  min-width: 0;
 }
 
 .galaga-touch-btn:active {

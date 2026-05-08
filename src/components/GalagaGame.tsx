@@ -119,9 +119,9 @@ const BULLET_H = 8;
 const PLAYER_SPEED = 2.5;
 const PLAYER_BULLET_SPEED = 4;
 const ENEMY_BULLET_SPEED = 2.5;
-const FORM_SPEED_BASE = 0.4;
-const FORM_STEP_DOWN = 10;
-const MAX_PLAYER_BULLETS = 1;
+const FORM_SPEED_BASE = 0.3;
+const FORM_STEP_DOWN = 8;
+const MAX_PLAYER_BULLETS = 2;
 const INITIAL_LIVES = 3;
 const STAR_COUNT = 60;
 
@@ -254,7 +254,7 @@ function initGame(highScore: number): GameData {
     formDir: 1,
     formSpeed: FORM_SPEED_BASE,
     formDropAmount: FORM_STEP_DOWN,
-    diveChance: 0.0002,
+    diveChance: 0.00008,
     invincible: 0,
     canFire: true,
     newHighScore: false,
@@ -283,7 +283,7 @@ function resetForNewGame(g: GameData): GameData {
   g.formDir = 1;
   g.formSpeed = FORM_SPEED_BASE;
   g.formDropAmount = FORM_STEP_DOWN;
-  g.diveChance = 0.0002;
+  g.diveChance = 0.00008;
   g.invincible = 0;
   g.canFire = true;
   g.newHighScore = false;
@@ -306,9 +306,9 @@ function startNextWave(g: GameData): GameData {
   g.enemyBullets = [];
   g.playerBullets = [];
   g.formDir = 1;
-  g.formSpeed = FORM_SPEED_BASE + (g.level - 1) * 0.08;
+  g.formSpeed = FORM_SPEED_BASE + (g.level - 1) * 0.05;
   g.formDropAmount = FORM_STEP_DOWN;
-  g.diveChance = Math.min(0.002, 0.0002 + (g.level - 1) * 0.00015);
+  g.diveChance = Math.min(0.0012, 0.00008 + (g.level - 1) * 0.0001);
   return g;
 }
 
@@ -433,8 +433,8 @@ function updateGame(g: GameData, ctx: AudioContext | null): GameData {
       }
     }
 
-    // Non-diving enemies also fire randomly
-    if (!enemy.diving && Math.random() < 0.0003 * (1 + g.level * 0.3)) {
+    // Non-diving enemies also fire randomly (reduced on low levels)
+    if (!enemy.diving && Math.random() < 0.0001 * (1 + g.level * 0.4)) {
       g.enemyBullets.push({
         x: enemy.x + enemy.width / 2 - BULLET_W / 2,
         y: enemy.y + enemy.height,

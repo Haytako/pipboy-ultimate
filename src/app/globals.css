@@ -1,0 +1,490 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* ============================================
+   PIP-BOY 3000 — CRT TERMINAL THEME
+   Sandalf Studio ©
+   ============================================ */
+
+:root {
+  --pip-green: #00ff00;
+  --pip-green-dark: #008f00;
+  --pip-green-dim: #005500;
+  --pip-green-glow: #00ff4141;
+  --pip-green-bright: #33ff33;
+  --pip-bg: #0a0f0a;
+  --pip-bg-light: #0f1a0f;
+  --pip-bg-panel: #0d150d;
+  --pip-border: #00aa00;
+  --pip-border-dim: #006600;
+  --pip-text: #00ff00;
+  --pip-text-dim: #008800;
+  --pip-amber: #ffb000;
+  --pip-red: #ff2020;
+  --pip-cyan: #00ffff;
+
+  /* CRT Effects */
+  --crt-scanline-opacity: 0.06;
+  --crt-flicker-speed: 0.15s;
+  --crt-glow-blur: 2px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--pip-bg);
+  color: var(--pip-text);
+  font-family: 'Courier New', 'Lucida Console', 'Monaco', monospace;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+/* CRT Scanline Overlay */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 0, var(--crt-scanline-opacity)) 2px,
+    rgba(0, 255, 0, var(--crt-scanline-opacity)) 4px
+  );
+}
+
+.crt-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+}
+
+/* Screen flicker animation */
+@keyframes crt-flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.95; }
+  10% { opacity: 0.98; }
+  15% { opacity: 0.96; }
+  20% { opacity: 0.99; }
+  50% { opacity: 0.96; }
+  80% { opacity: 0.98; }
+  90% { opacity: 0.95; }
+  100% { opacity: 0.98; }
+}
+
+.crt-screen {
+  animation: crt-flicker var(--crt-flicker-speed) infinite;
+}
+
+/* Text glow effect */
+.pip-glow {
+  text-shadow:
+    0 0 var(--crt-glow-blur) var(--pip-green),
+    0 0 4px var(--pip-green-glow),
+    0 0 8px rgba(0, 255, 0, 0.2);
+}
+
+.pip-glow-strong {
+  text-shadow:
+    0 0 4px var(--pip-green),
+    0 0 8px var(--pip-green),
+    0 0 16px rgba(0, 255, 0, 0.4),
+    0 0 32px rgba(0, 255, 0, 0.2);
+}
+
+/* Panel styling */
+.pip-panel {
+  background: var(--pip-bg-panel);
+  border: 1px solid var(--pip-border);
+  box-shadow:
+    inset 0 0 20px rgba(0, 255, 0, 0.05),
+    0 0 8px rgba(0, 255, 0, 0.1);
+  position: relative;
+}
+
+.pip-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pip-green), transparent);
+  opacity: 0.5;
+}
+
+/* Button styles */
+.pip-btn {
+  background: var(--pip-bg);
+  border: 1px solid var(--pip-border);
+  color: var(--pip-text);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 6px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.1s;
+  text-shadow: 0 0 4px var(--pip-green-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.pip-btn:hover {
+  background: var(--pip-green-dim);
+  border-color: var(--pip-green);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+.pip-btn:active {
+  background: var(--pip-green-dark);
+  transform: scale(0.97);
+}
+
+.pip-btn-active {
+  background: var(--pip-green-dim) !important;
+  border-color: var(--pip-green) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+.pip-btn-danger {
+  border-color: var(--pip-red);
+  color: var(--pip-red);
+}
+
+.pip-btn-danger:hover {
+  background: rgba(255, 32, 32, 0.15);
+  box-shadow: 0 0 10px rgba(255, 32, 32, 0.3);
+}
+
+/* Input styles */
+.pip-input {
+  background: var(--pip-bg);
+  border: 1px solid var(--pip-border-dim);
+  color: var(--pip-text);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  padding: 6px 10px;
+  outline: none;
+  width: 100%;
+  text-shadow: 0 0 2px var(--pip-green-glow);
+}
+
+.pip-input:focus {
+  border-color: var(--pip-green);
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.2), inset 0 0 8px rgba(0, 255, 0, 0.05);
+}
+
+.pip-input::placeholder {
+  color: var(--pip-text-dim);
+  opacity: 0.6;
+}
+
+.pip-textarea {
+  background: var(--pip-bg);
+  border: 1px solid var(--pip-border-dim);
+  color: var(--pip-text);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  width: 100%;
+  resize: vertical;
+  min-height: 60px;
+  text-shadow: 0 0 2px var(--pip-green-glow);
+}
+
+.pip-textarea:focus {
+  border-color: var(--pip-green);
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.2), inset 0 0 8px rgba(0, 255, 0, 0.05);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--pip-bg);
+  border: 1px solid var(--pip-border-dim);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--pip-green-dark);
+  border: 1px solid var(--pip-border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pip-green-dim);
+}
+
+/* Leaflet map Pip-Boy override */
+.leaflet-container {
+  background: var(--pip-bg) !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.leaflet-tile-pane {
+  filter: saturate(0) brightness(0.6) contrast(1.4) sepia(1) hue-rotate(80deg) saturate(3) brightness(0.7);
+}
+
+.leaflet-control-zoom a {
+  background: var(--pip-bg-panel) !important;
+  color: var(--pip-text) !important;
+  border-color: var(--pip-border) !important;
+  font-family: 'Courier New', monospace !important;
+  text-shadow: 0 0 4px var(--pip-green-glow) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--pip-green-dim) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(10, 15, 10, 0.8) !important;
+  color: var(--pip-text-dim) !important;
+  font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--pip-green-dark) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--pip-bg-panel) !important;
+  color: var(--pip-text) !important;
+  border: 1px solid var(--pip-border) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.2) !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--pip-bg-panel) !important;
+  border: 1px solid var(--pip-border) !important;
+}
+
+.leaflet-popup-close-button {
+  color: var(--pip-text) !important;
+}
+
+/* Pip-Boy marker icon */
+.pip-marker {
+  color: var(--pip-green);
+  filter: drop-shadow(0 0 4px var(--pip-green));
+}
+
+.pip-marker-favorite {
+  color: var(--pip-amber);
+  filter: drop-shadow(0 0 4px var(--pip-amber));
+}
+
+/* Drawn routes on map */
+.leaflet-overlay-pane svg path {
+  stroke: var(--pip-green) !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: 8, 4 !important;
+  filter: drop-shadow(0 0 3px var(--pip-green));
+}
+
+.leaflet-overlay-pane svg path.measure-path {
+  stroke: var(--pip-amber) !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: 4, 4 !important;
+  filter: drop-shadow(0 0 3px var(--pip-amber));
+}
+
+/* Loading screen */
+@keyframes pip-boot {
+  0% { content: 'INITIALIZING PIP-BOY 3000.'; }
+  25% { content: 'LOADING MAP MODULES..'; }
+  50% { content: 'CALIBRATING POSITION...'; }
+  75% { content: 'SCANNING SURROUNDINGS....'; }
+  100% { content: 'SYSTEM READY.'; }
+}
+
+@keyframes pip-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.pip-boot-text::after {
+  content: '_';
+  animation: pip-cursor-blink 0.7s infinite;
+}
+
+/* Tab / section styling */
+.pip-tab {
+  border-bottom: 1px solid var(--pip-border-dim);
+  padding: 8px 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--pip-text-dim);
+  transition: all 0.15s;
+}
+
+.pip-tab:hover {
+  color: var(--pip-text);
+  border-color: var(--pip-border);
+}
+
+.pip-tab-active {
+  color: var(--pip-green) !important;
+  border-color: var(--pip-green) !important;
+  text-shadow: 0 0 8px var(--pip-green-glow);
+}
+
+/* Header bar */
+.pip-header {
+  background: linear-gradient(180deg, var(--pip-bg-light) 0%, var(--pip-bg) 100%);
+  border-bottom: 2px solid var(--pip-border);
+  box-shadow: 0 2px 10px rgba(0, 255, 0, 0.1);
+}
+
+/* Select dropdown */
+.pip-select {
+  background: var(--pip-bg);
+  border: 1px solid var(--pip-border-dim);
+  color: var(--pip-text);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+}
+
+.pip-select:focus {
+  border-color: var(--pip-green);
+}
+
+.pip-select option {
+  background: var(--pip-bg);
+  color: var(--pip-text);
+}
+
+/* Transport table */
+.pip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.pip-table th {
+  border-bottom: 1px solid var(--pip-border);
+  color: var(--pip-green-bright);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.pip-table td {
+  border-bottom: 1px solid var(--pip-border-dim);
+  padding: 5px 8px;
+  color: var(--pip-text);
+}
+
+.pip-table tr:hover td {
+  background: rgba(0, 255, 0, 0.03);
+}
+
+/* Utility classes */
+.text-pip { color: var(--pip-text); }
+.text-pip-dim { color: var(--pip-text-dim); }
+.text-pip-amber { color: var(--pip-amber); }
+.text-pip-red { color: var(--pip-red); }
+.text-pip-cyan { color: var(--pip-cyan); }
+.text-pip-bright { color: var(--pip-green-bright); }
+.bg-pip { background: var(--pip-bg); }
+.bg-pip-panel { background: var(--pip-bg-panel); }
+.border-pip { border-color: var(--pip-border); }
+.border-pip-dim { border-color: var(--pip-border-dim); }
+
+/* Loading animation */
+@keyframes pip-loading-bar {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+.pip-loading-bar {
+  height: 2px;
+  background: var(--pip-green);
+  box-shadow: 0 0 10px var(--pip-green), 0 0 20px rgba(0, 255, 0, 0.3);
+  animation: pip-loading-bar 2s ease-in-out infinite;
+}
+
+/* Fade in animation */
+@keyframes pip-fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pip-fadein {
+  animation: pip-fadein 0.5s ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GALAGA GAME
+   ═══════════════════════════════════════════════════════════ */
+
+.galaga-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.galaga-canvas {
+  border: 1px solid var(--pip-border);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.15), inset 0 0 20px rgba(0, 255, 0, 0.05);
+  image-rendering: pixelated;
+}
+
+.galaga-touch-controls {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.galaga-touch-btn {
+  background: var(--pip-bg);
+  border: 1px solid var(--pip-border);
+  color: var(--pip-text);
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  padding: 12px 20px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  text-shadow: 0 0 4px var(--pip-green-glow);
+}
+
+.galaga-touch-btn:active {
+  background: var(--pip-green-dim);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.1);
+}

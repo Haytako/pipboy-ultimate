@@ -49,5 +49,3 @@ https://haytako.github.io/pipboy-ultimate/
 ## ╨Р╨▓╤В╨╛╤А
 
 Sheglakov Aleksandr ([@haytako](https://github.com/haytako))
-Не удается найти указанный файл.
-## Guide / Гайд 

@@ -49,3 +49,7 @@ https://haytako.github.io/pipboy-ultimate/
 ## Автор
 
 Sheglakov Aleksandr ([@haytako](https://github.com/haytako))
+ 
+## Guide
+
+[PipBoy_Ultimate_UserGuide_v3.pdf](./PipBoy_Ultimate_UserGuide_v3.pdf)

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import ServiceWorkerRegistrar from "../components/ServiceWorkerRegistrar";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -35,6 +36,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/pipboy-ultimate/icon-192.png" />
       </head>
       <body className="bg-[#0a0f0a] text-[#00ff00] overflow-hidden">
+        <ServiceWorkerRegistrar />
         {children}
       </body>
     </html>

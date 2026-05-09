@@ -247,6 +247,11 @@ html, body {
   filter: saturate(0) brightness(0.6) contrast(1.4) sepia(1) hue-rotate(80deg) saturate(3) brightness(0.7);
 }
 
+.leaflet-control-zoom {
+  top: auto !important;
+  bottom: 30px !important;
+}
+
 .leaflet-control-zoom a {
   background: var(--pip-bg-panel) !important;
   color: var(--pip-text) !important;

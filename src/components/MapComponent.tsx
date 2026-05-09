@@ -145,12 +145,14 @@ const MapInner = dynamic(
           const { lat, lng } = e.latlng;
 
           if (drawMode === 'marker') {
-            // Create a new marker at click position
+            // Ask user for marker name
+            const name = window.prompt('Marker name:', 'NEW LOCATION');
+            if (name === null) return; // user cancelled
             const newMarker: Marker = {
               id: crypto.randomUUID(),
               lat,
               lng,
-              title: 'NEW LOCATION',
+              title: name.trim() || 'NEW LOCATION',
               description: '',
               category: 'general',
               favorite: false,
@@ -212,10 +214,12 @@ const MapInner = dynamic(
       marker,
       onDelete,
       onToggleFavorite,
+      onRename,
     }: {
       marker: Marker;
       onDelete: () => void;
       onToggleFavorite: () => void;
+      onRename: (newTitle: string) => void;
     }) {
       const favColor = '#ffb000';
       const greenColor = '#00ff00';
@@ -299,6 +303,22 @@ const MapInner = dynamic(
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
+                  const newName = window.prompt('Rename marker:', marker.title);
+                  if (newName !== null && newName.trim()) onRename(newName.trim());
+                }}
+                style={{
+                  ...btnBase,
+                  background: 'rgba(0,255,0,0.05)',
+                  border: `1px solid #00aa00`,
+                  color: greenColor,
+                }}
+              >
+                {'\u270E'} EDIT
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
                   onToggleFavorite();
                 }}
                 style={{
@@ -364,6 +384,7 @@ const MapInner = dynamic(
       // Store actions for marker operations
       const deleteMarker = usePipStore((s) => s.deleteMarker);
       const toggleFavorite = usePipStore((s) => s.toggleFavorite);
+      const updateMarker = usePipStore((s) => s.updateMarker);
 
       // ── Finalize route when leaving draw mode ──────────────────
       useEffect(() => {
@@ -439,6 +460,7 @@ const MapInner = dynamic(
                   marker={m}
                   onDelete={() => deleteMarker(m.id)}
                   onToggleFavorite={() => toggleFavorite(m.id)}
+                  onRename={(newTitle) => updateMarker(m.id, { title: newTitle })}
                 />
               </Marker>
             ))}

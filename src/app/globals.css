@@ -250,6 +250,8 @@ html, body {
 .leaflet-control-zoom {
   top: auto !important;
   bottom: 30px !important;
+  left: 8px !important;
+  right: auto !important;
 }
 
 .leaflet-control-zoom a {
@@ -496,4 +498,43 @@ html, body {
 .galaga-touch-btn:active {
   background: var(--pip-green-dim);
   box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+/* Marker naming dialog */
+.pip-marker-naming-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.pip-marker-naming-panel {
+  background: rgba(10, 15, 10, 0.97);
+  border: 1px solid #00aa00;
+  padding: 20px;
+  min-width: 280px;
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.2), inset 0 0 20px rgba(0, 255, 0, 0.05);
+}
+
+.pip-marker-naming-input {
+  background: rgba(10, 15, 10, 0.95);
+  border: 1px solid #00aa00;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  padding: 8px 12px;
+  outline: none;
+  width: 100%;
+  text-shadow: 0 0 4px rgba(0, 255, 0, 0.3);
+}
+
+.pip-marker-naming-input:focus {
+  border-color: #00ff00;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
 }

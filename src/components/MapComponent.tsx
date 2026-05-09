@@ -17,6 +17,7 @@ interface MapComponentProps {
   measurePoints: [number, number][];
   onMeasurePointsChange?: (points: [number, number][]) => void;
   onMeasureDistance?: (distance: number) => void;
+  onMarkerNameRequest?: (lat: number, lng: number) => void;
 }
 
 // ===== Tile Layer Config =====
@@ -126,7 +127,7 @@ const MapInner = dynamic(
     function MapClickHandler({
       drawMode,
       measurePoints,
-      onMarkerAdd,
+      onMarkerNameRequest,
       onMeasurePointsChange,
       onMeasureDistance,
       drawingPoints,
@@ -134,7 +135,7 @@ const MapInner = dynamic(
     }: {
       drawMode: MapComponentProps['drawMode'];
       measurePoints: [number, number][];
-      onMarkerAdd?: (marker: Marker) => void;
+      onMarkerNameRequest?: (lat: number, lng: number) => void;
       onMeasurePointsChange?: (points: [number, number][]) => void;
       onMeasureDistance?: (distance: number) => void;
       drawingPoints: [number, number][];
@@ -145,19 +146,8 @@ const MapInner = dynamic(
           const { lat, lng } = e.latlng;
 
           if (drawMode === 'marker') {
-            // Ask user for marker name
-            const name = window.prompt('Marker name:', 'NEW LOCATION');
-            if (name === null) return; // user cancelled
-            const newMarker: Marker = {
-              id: crypto.randomUUID(),
-              lat,
-              lng,
-              title: name.trim() || 'NEW LOCATION',
-              description: '',
-              category: 'general',
-              favorite: false,
-            };
-            onMarkerAdd?.(newMarker);
+            // Request marker naming via callback (no window.prompt)
+            onMarkerNameRequest?.(lat, lng);
           } else if (drawMode === 'draw') {
             // Add point to current drawing
             setDrawingPoints((prev) => [...prev, [lat, lng]]);
@@ -368,10 +358,18 @@ const MapInner = dynamic(
         measurePoints,
         onMeasurePointsChange,
         onMeasureDistance,
+        onMarkerNameRequest: externalNameRequest,
       } = props;
 
       // Expose map instance for programmatic access
       const mapRef = useRef<L.Map | null>(null);
+
+      // Marker naming dialog state
+      const [namingMarker, setNamingMarker] = useState<{ lat: number; lng: number } | null>(null);
+      const [markerName, setMarkerName] = useState('');
+
+      // Ref for auto-focusing the naming input
+      const namingInputRef = useRef<HTMLInputElement>(null);
 
       // Drawing state (accumulated points in draw mode)
       const [drawingPoints, setDrawingPoints] = useState<[number, number][]>(
@@ -385,6 +383,76 @@ const MapInner = dynamic(
       const deleteMarker = usePipStore((s) => s.deleteMarker);
       const toggleFavorite = usePipStore((s) => s.toggleFavorite);
       const updateMarker = usePipStore((s) => s.updateMarker);
+
+      // ── Auto-focus naming input when dialog opens ──────────────
+      useEffect(() => {
+        if (namingMarker !== null && namingInputRef.current) {
+          // Small delay to ensure the input is mounted and visible
+          const timer = setTimeout(() => {
+            namingInputRef.current?.focus();
+          }, 50);
+          return () => clearTimeout(timer);
+        }
+      }, [namingMarker]);
+
+      // ── Handle Escape key to cancel naming dialog ──────────────
+      useEffect(() => {
+        if (namingMarker === null) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.key === 'Escape') {
+            setNamingMarker(null);
+            setMarkerName('');
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [namingMarker]);
+
+      // ── Internal marker name request handler ───────────────────
+      const handleMarkerNameRequest = useCallback(
+        (lat: number, lng: number) => {
+          setNamingMarker({ lat, lng });
+          setMarkerName('');
+          // Notify parent if callback provided
+          externalNameRequest?.(lat, lng);
+        },
+        [externalNameRequest]
+      );
+
+      // ── Confirm marker creation from naming dialog ─────────────
+      const handleNamingOk = useCallback(() => {
+        if (!namingMarker) return;
+        const newMarker: Marker = {
+          id: crypto.randomUUID(),
+          lat: namingMarker.lat,
+          lng: namingMarker.lng,
+          title: markerName.trim() || 'NEW LOCATION',
+          description: '',
+          category: 'general',
+          favorite: false,
+        };
+        onMarkerAdd?.(newMarker);
+        setNamingMarker(null);
+        setMarkerName('');
+      }, [namingMarker, markerName, onMarkerAdd]);
+
+      // ── Cancel marker naming dialog ────────────────────────────
+      const handleNamingCancel = useCallback(() => {
+        setNamingMarker(null);
+        setMarkerName('');
+      }, []);
+
+      // ── Handle Enter key in naming input ───────────────────────
+      const handleNamingKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'Enter') {
+            handleNamingOk();
+          } else if (e.key === 'Escape') {
+            handleNamingCancel();
+          }
+        },
+        [handleNamingOk, handleNamingCancel]
+      );
 
       // ── Finalize route when leaving draw mode ──────────────────
       useEffect(() => {
@@ -423,6 +491,46 @@ const MapInner = dynamic(
       // ── Drawing polyline key (forces re-render on point change) ─
       const drawPolylineKey = drawingPoints.length;
 
+      // ── Zoom button handlers ───────────────────────────────────
+      const handleZoomIn = useCallback(() => {
+        if (mapRef.current) {
+          mapRef.current.zoomIn();
+        }
+      }, []);
+
+      const handleZoomOut = useCallback(() => {
+        if (mapRef.current) {
+          mapRef.current.zoomOut();
+        }
+      }, []);
+
+      // Pip-Boy styled zoom button
+      const zoomBtnStyle: React.CSSProperties = {
+        width: '32px',
+        height: '32px',
+        background: 'rgba(10,15,10,0.9)',
+        border: '1px solid #00aa00',
+        color: '#00ff00',
+        fontFamily: "'Courier New', monospace",
+        fontSize: '16px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textShadow: '0 0 4px #00ff00',
+      };
+
+      // Pip-Boy styled naming button
+      const namingBtnStyle: React.CSSProperties = {
+        fontFamily: "'Courier New', monospace",
+        fontSize: '12px',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textTransform: 'uppercase' as const,
+        letterSpacing: '1px',
+        lineHeight: '1',
+      };
+
       return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
           {/* React-Leaflet Map Container */}
@@ -430,7 +538,7 @@ const MapInner = dynamic(
             center={mapSettings.center}
             zoom={mapSettings.zoom}
             style={{ width: '100%', height: '100%' }}
-            zoomControl={true}
+            zoomControl={false}
             attributionControl={true}
           >
             {/* Tile layer — streets or topo */}
@@ -442,7 +550,7 @@ const MapInner = dynamic(
             <MapClickHandler
               drawMode={drawMode}
               measurePoints={measurePoints}
-              onMarkerAdd={onMarkerAdd}
+              onMarkerNameRequest={handleMarkerNameRequest}
               onMeasurePointsChange={onMeasurePointsChange}
               onMeasureDistance={onMeasureDistance}
               drawingPoints={drawingPoints}
@@ -599,7 +707,7 @@ const MapInner = dynamic(
           )}
 
           {/* Marker mode hint */}
-          {drawMode === 'marker' && (
+          {drawMode === 'marker' && namingMarker === null && (
             <div
               className="pip-panel"
               style={{
@@ -639,6 +747,90 @@ const MapInner = dynamic(
               }}
             >
               {'// CLICK TO MEASURE DISTANCE'}
+            </div>
+          )}
+
+          {/* ── Custom Pip-Boy Zoom Buttons ─────────────────────── */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '10px',
+              right: '10px',
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+            }}
+          >
+            <button onClick={handleZoomIn} style={zoomBtnStyle} title="Zoom in">
+              +
+            </button>
+            <button onClick={handleZoomOut} style={zoomBtnStyle} title="Zoom out">
+              −
+            </button>
+          </div>
+
+          {/* ── Marker Naming Dialog ────────────────────────────── */}
+          {namingMarker !== null && (
+            <div className="pip-marker-naming-overlay">
+              <div className="pip-marker-naming-panel">
+                <div
+                  style={{
+                    fontFamily: "'Courier New', monospace",
+                    fontSize: '11px',
+                    color: '#00aa00',
+                    marginBottom: '10px',
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase' as const,
+                    textShadow: '0 0 4px rgba(0, 170, 0, 0.3)',
+                  }}
+                >
+                  ENTER MARKER NAME:
+                </div>
+                <input
+                  ref={namingInputRef}
+                  type="text"
+                  className="pip-marker-naming-input"
+                  value={markerName}
+                  onChange={(e) => setMarkerName(e.target.value)}
+                  onKeyDown={handleNamingKeyDown}
+                  placeholder="NEW LOCATION"
+                  autoComplete="off"
+                  autoFocus
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    marginTop: '14px',
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  <button
+                    onClick={handleNamingCancel}
+                    style={{
+                      ...namingBtnStyle,
+                      background: 'rgba(10,15,10,0.9)',
+                      border: '1px solid #006600',
+                      color: '#008800',
+                    }}
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={handleNamingOk}
+                    style={{
+                      ...namingBtnStyle,
+                      background: 'rgba(0,255,0,0.1)',
+                      border: '1px solid #00aa00',
+                      color: '#00ff00',
+                      textShadow: '0 0 4px #00ff00',
+                    }}
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

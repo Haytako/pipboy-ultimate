@@ -20,27 +20,6 @@
 - Web Audio API (звуковые эффекты)
 - Статический экспорт на GitHub Pages
 
-## Деплой
-
-Проект разворачивается на GitHub Pages из ветки `main`.
-Для деплоя используется скрипт `deploy.ps1` (PowerShell):
-
-```powershell
-.\deploy.ps1
-```
-
-Или вручную:
-
-```powershell
-npm run build
-Remove-Item -Recurse -Force _next -ErrorAction SilentlyContinue
-Copy-Item -Recurse out/_next ./
-Copy-Item out/index.html ./
-if (-not (Test-Path .nojekyll)) { echo "" > .nojekyll }
-git add -A
-git commit -m "deploy"
-git push
-```
 
 ## Сайт
 

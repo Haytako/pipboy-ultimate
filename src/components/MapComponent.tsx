@@ -416,6 +416,8 @@ const MapInner = dynamic(
       const toggleFavorite = usePipStore((s) => s.toggleFavorite);
       const updateMarker = usePipStore((s) => s.updateMarker);
       const updateMapSettings = usePipStore((s) => s.updateMapSettings);
+      const flyToTarget = usePipStore((s) => s.flyToTarget);
+      const clearFlyTo = usePipStore((s) => s.clearFlyTo);
 
       // ── City search state ──────────────────────────────────────
       const [searchQuery, setSearchQuery] = useState('');
@@ -491,6 +493,21 @@ const MapInner = dynamic(
           updateMapSettings({ center, zoom });
         }, 500);
       }, [updateMapSettings]);
+
+      // ── React to flyToTarget from store (e.g. marker click in side panel) ──
+      useEffect(() => {
+        if (!flyToTarget) return;
+        const t = setTimeout(() => {
+          if (mapRef.current) {
+            const zoom = flyToTarget.zoom ?? Math.max(mapRef.current.getZoom(), 14);
+            mapRef.current.flyTo([flyToTarget.lat, flyToTarget.lng], zoom, {
+              duration: 1.2,
+            });
+          }
+          clearFlyTo();
+        }, 50);
+        return () => clearTimeout(t);
+      }, [flyToTarget, clearFlyTo]);
 
       // ── Auto-focus naming input when dialog opens ──────────────
       useEffect(() => {

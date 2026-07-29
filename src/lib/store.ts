@@ -100,6 +100,7 @@ interface PipBoyState {
   markers: Marker[];
   routes: Route[];
   mapSettings: MapSettings;
+  flyToTarget: { lat: number; lng: number; zoom?: number; ts: number } | null;
 
   // Habits
   habits: Habit[];
@@ -127,6 +128,8 @@ interface PipBoyState {
   updateRoute: (id: string, data: Partial<Route>) => void;
   deleteRoute: (id: string) => void;
   updateMapSettings: (settings: Partial<MapSettings>) => void;
+  flyTo: (lat: number, lng: number, zoom?: number) => void;
+  clearFlyTo: () => void;
 
   // Actions — Habits
   addHabit: (habit: Habit) => void;
@@ -213,6 +216,7 @@ const INITIAL_STATE = {
   markers: [] as Marker[],
   routes: [] as Route[],
   mapSettings: DEFAULT_MAP_SETTINGS,
+  flyToTarget: null,
 
   // Habits
   habits: [] as Habit[],
@@ -276,6 +280,13 @@ export const usePipStore = create<PipBoyState>()(
         set((s) => ({
           mapSettings: { ...s.mapSettings, ...settings },
         })),
+
+      flyTo: (lat, lng, zoom) =>
+        set(() => ({
+          flyToTarget: { lat, lng, zoom, ts: Date.now() },
+        })),
+
+      clearFlyTo: () => set(() => ({ flyToTarget: null })),
 
       // ── Habit Actions ─────────────────────────────────────────
       addHabit: (habit) =>

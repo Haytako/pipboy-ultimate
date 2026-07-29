@@ -857,17 +857,29 @@ function MapPanel({
                     padding: '6px 8px',
                     border: '1px solid var(--pip-border-dim)',
                     fontSize: '11px',
-                  }}>
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => usePipStore.getState().flyTo(m.lat, m.lng, 15)}
+                  >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: m.favorite ? 'var(--pip-amber)' : 'var(--pip-text)' }}>
                         {m.favorite ? '★ ' : '◉ '}{m.title}
                       </span>
-                      <button
-                        onClick={() => deleteMarker(m.id)}
-                        style={{ color: 'var(--pip-red)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '10px', fontFamily: "'Courier New', monospace" }}
-                      >
-                        ✕
-                      </button>
+                      <span style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); usePipStore.getState().flyTo(m.lat, m.lng, 15); }}
+                          title={language === 'ru' ? 'Перелететь' : 'Fly to'}
+                          style={{ color: 'var(--pip-green-bright)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '11px', fontFamily: "'Courier New', monospace", padding: '0 2px' }}
+                        >
+                          →
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteMarker(m.id); }}
+                          style={{ color: 'var(--pip-red)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '10px', fontFamily: "'Courier New', monospace" }}
+                        >
+                          ✕
+                        </button>
+                      </span>
                     </div>
                     {m.description && (
                       <div style={{ color: 'var(--pip-text-dim)', fontSize: '10px', marginTop: '2px' }}>
@@ -894,26 +906,43 @@ function MapPanel({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {routes.map((r) => (
+                {routes.map((r) => {
+                  const first = r.points[0];
+                  return (
                   <div key={r.id} style={{
                     padding: '6px 8px',
                     border: '1px solid var(--pip-border-dim)',
                     fontSize: '11px',
-                  }}>
+                    cursor: first ? 'pointer' : 'default',
+                  }}
+                  onClick={() => first && usePipStore.getState().flyTo(first[0], first[1], 14)}
+                  >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: 'var(--pip-text)' }}>{r.name}</span>
-                      <button
-                        onClick={() => deleteRoute(r.id)}
-                        style={{ color: 'var(--pip-red)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '10px', fontFamily: "'Courier New', monospace" }}
-                      >
-                        ✕
-                      </button>
+                      <span style={{ display: 'flex', gap: '6px' }}>
+                        {first && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); usePipStore.getState().flyTo(first[0], first[1], 14); }}
+                            title={language === 'ru' ? 'Перелететь' : 'Fly to'}
+                            style={{ color: 'var(--pip-green-bright)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '11px', fontFamily: "'Courier New', monospace", padding: '0 2px' }}
+                          >
+                            →
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteRoute(r.id); }}
+                          style={{ color: 'var(--pip-red)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '10px', fontFamily: "'Courier New', monospace" }}
+                        >
+                          ✕
+                        </button>
+                      </span>
                     </div>
                     <div style={{ color: 'var(--pip-text-dim)', fontSize: '10px', marginTop: '2px' }}>
                       {r.points.length} {language === 'ru' ? 'точек' : 'points'}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

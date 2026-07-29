@@ -198,6 +198,38 @@ const MapInner = dynamic(
       return null;
     }
 
+    // ─── Map Move/Zoom Tracker (saves position to store) ────────
+
+    function MapMoveTracker({
+      onMoveEnd,
+    }: {
+      onMoveEnd: (center: [number, number], zoom: number) => void;
+    }) {
+      const map = useMap();
+      useEffect(() => {
+        const handleMoveEnd = () => {
+          const c = map.getCenter();
+          const z = map.getZoom();
+          onMoveEnd([c.lat, c.lng], z);
+        };
+        map.on('moveend', handleMoveEnd);
+        map.on('zoomend', handleMoveEnd);
+        return () => {
+          map.off('moveend', handleMoveEnd);
+          map.off('zoomend', handleMoveEnd);
+        };
+      }, [map, onMoveEnd]);
+      return null;
+    }
+
+    // ─── City Search Result Type ────────────────────────────────
+
+    interface SearchResult {
+      lat: number;
+      lng: number;
+      display_name: string;
+    }
+
     // ─── Pip-Boy Styled Marker Popup ────────────────────────────
 
     function MarkerPopup({
@@ -383,6 +415,82 @@ const MapInner = dynamic(
       const deleteMarker = usePipStore((s) => s.deleteMarker);
       const toggleFavorite = usePipStore((s) => s.toggleFavorite);
       const updateMarker = usePipStore((s) => s.updateMarker);
+      const updateMapSettings = usePipStore((s) => s.updateMapSettings);
+
+      // ── City search state ──────────────────────────────────────
+      const [searchQuery, setSearchQuery] = useState('');
+      const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+      const [isSearching, setIsSearching] = useState(false);
+      const [showResults, setShowResults] = useState(false);
+      const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+      // ── Perform city search via Photon API ─────────────────────
+      const performSearch = useCallback(async (query: string) => {
+        const q = (query || '').trim();
+        if (!q) {
+          setSearchResults([]);
+          setShowResults(false);
+          setIsSearching(false);
+          return;
+        }
+        setIsSearching(true);
+        setShowResults(true);
+        try {
+          const res = await fetch(
+            `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5`
+          );
+          const text = await res.text();
+          let data: any = null;
+          try { data = JSON.parse(text); } catch { data = null; }
+          const results: SearchResult[] = (data?.features || [])
+            .filter((f: any) => f?.geometry?.coordinates?.[1] != null && f?.geometry?.coordinates?.[0] != null)
+            .map((f: any) => {
+              const props = f.properties || {};
+              const name = props.name || '';
+              const city = props.city || props.town || props.village || '';
+              const country = props.country || '';
+              const parts = [name, city, country].filter(Boolean);
+              return {
+                lat: f.geometry.coordinates[1],
+                lng: f.geometry.coordinates[0],
+                display_name: parts.join(', ') || 'Unknown',
+              };
+            });
+          setSearchResults(results);
+        } catch (e) {
+          console.error('Search failed:', e);
+          setSearchResults([]);
+        }
+        setIsSearching(false);
+      }, []);
+
+      // ── Debounced search input handler ─────────────────────────
+      const handleSearchInput = useCallback((value: string) => {
+        setSearchQuery(value);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(() => {
+          performSearch(value);
+        }, 400);
+      }, [performSearch]);
+
+      // ── Fly to search result ───────────────────────────────────
+      const handleSelectResult = useCallback((result: SearchResult) => {
+        if (mapRef.current) {
+          mapRef.current.flyTo([result.lat, result.lng], 15, { duration: 1.2 });
+        }
+        setSearchQuery(result.display_name);
+        setShowResults(false);
+        setSearchResults([]);
+      }, []);
+
+      // ── Save map position on move/zoom (debounced) ──────────────
+      const savePositionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+      const handleMapMoveEnd = useCallback((center: [number, number], zoom: number) => {
+        if (savePositionTimerRef.current) clearTimeout(savePositionTimerRef.current);
+        savePositionTimerRef.current = setTimeout(() => {
+          updateMapSettings({ center, zoom });
+        }, 500);
+      }, [updateMapSettings]);
 
       // ── Auto-focus naming input when dialog opens ──────────────
       useEffect(() => {
@@ -546,6 +654,7 @@ const MapInner = dynamic(
 
             {/* Map infrastructure hooks */}
             <MapRefHandler mapRef={mapRef} />
+            <MapMoveTracker onMoveEnd={handleMapMoveEnd} />
             <MapCursorHandler drawMode={drawMode} />
             <MapClickHandler
               drawMode={drawMode}
@@ -768,6 +877,129 @@ const MapInner = dynamic(
             <button onClick={handleZoomOut} style={zoomBtnStyle} title="Zoom out">
               −
             </button>
+          </div>
+
+          {/* ── City Search Box (top-left) ─────────────────────── */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              left: '10px',
+              zIndex: 1000,
+              width: '220px',
+              maxWidth: 'calc(100vw - 20px)',
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                onFocus={() => { if (searchResults.length > 0) setShowResults(true); }}
+                onBlur={() => { setTimeout(() => setShowResults(false), 200); }}
+                placeholder="// SEARCH CITY..."
+                autoComplete="off"
+                style={{
+                  width: '100%',
+                  background: 'rgba(10,15,10,0.92)',
+                  border: '1px solid #00aa00',
+                  color: '#00ff00',
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: '11px',
+                  padding: '6px 10px 6px 26px',
+                  outline: 'none',
+                  textShadow: '0 0 4px #00ff00',
+                  letterSpacing: '1px',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#00ff00',
+                  fontSize: '11px',
+                  pointerEvents: 'none',
+                  textShadow: '0 0 4px #00ff00',
+                }}
+              >
+                ⌕
+              </div>
+              {isSearching && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#ffb000',
+                    fontSize: '10px',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  ...
+                </div>
+              )}
+            </div>
+
+            {showResults && searchResults.length > 0 && (
+              <div
+                style={{
+                  marginTop: '2px',
+                  background: 'rgba(10,15,10,0.95)',
+                  border: '1px solid #00aa00',
+                  maxHeight: '180px',
+                  overflowY: 'auto',
+                }}
+              >
+                {searchResults.map((r, i) => (
+                  <button
+                    key={i}
+                    onMouseDown={(e) => { e.preventDefault(); handleSelectResult(r); }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '5px 10px',
+                      fontSize: '10px',
+                      color: '#00ff00',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: i < searchResults.length - 1 ? '1px solid rgba(0,170,0,0.2)' : 'none',
+                      cursor: 'pointer',
+                      fontFamily: "'Courier New', monospace",
+                      lineHeight: '1.3',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,255,0,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'none';
+                    }}
+                  >
+                    {r.display_name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {showResults && !isSearching && searchResults.length === 0 && searchQuery.trim() && (
+              <div
+                style={{
+                  marginTop: '2px',
+                  background: 'rgba(10,15,10,0.95)',
+                  border: '1px solid #660000',
+                  padding: '6px 10px',
+                  fontSize: '10px',
+                  color: '#ff6666',
+                  fontFamily: "'Courier New', monospace",
+                }}
+              >
+                // NO RESULTS
+              </div>
+            )}
           </div>
 
           {/* ── Marker Naming Dialog ────────────────────────────── */}
